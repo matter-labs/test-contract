@@ -166,6 +166,16 @@ contract Main is ReentrancyGuard {
         _ecrecoverOneTest(data1);
         _ecrecoverOneTest(data2);
 
+        // ecrecover with msg.hash == 0
+
+        SignatureTestData memory data3 = SignatureTestData({
+            addr: 0x0865a77D4d68c7e3cdD219D431CfeE9271905074,
+            hash: 0x0,
+            signature: hex"c46cdc50a66f4d07c6e9a127a7277e882fb21bcfb5b068f2b58c7f7283993b790bdb5f0ac79d1a7efdc255f399a045038c1b433e9d06c1b1abd58a5fcaab33f11C"
+        });
+
+        _ecrecoverOneTest(data3);
+
         // failed to recover address (address == 0)
 
         SignatureTestData memory data4 = SignatureTestData({
