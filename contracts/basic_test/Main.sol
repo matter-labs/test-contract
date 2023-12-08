@@ -58,6 +58,9 @@ contract Main is ReentrancyGuard {
         // Test storage read/write, and hashes
         heapTest();
 
+        // Test keccak works along buffer bounds
+        keccakBoundsTest();
+
         uint256 heapSizeBefore = heap.getSize();
         require(heapSizeBefore != 0, "Heap should not be empty");
 
@@ -75,7 +78,7 @@ contract Main is ReentrancyGuard {
 
         }
 
-        // Test a couple of ercecover calls.
+        // Test a couple of ecrecover calls.
         ecrecoverTest();
 
         (bool s, ) = addressForBurning.call{value: msg.value}("");
@@ -123,6 +126,19 @@ contract Main is ReentrancyGuard {
         require(gasLeftAfter < gasLeftBefore, "Some error message");
 
         emit HeapUpdated(data, gasLeftBefore - gasLeftAfter);
+    }
+
+    function keccakBoundsTest() public {
+        // 135 chars
+        bytes memory preLimitData = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+        // 136 chars
+        bytes memory limitData = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+        // 137 chars
+        bytes memory overLimitData = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+
+        keccak256(preLimitData);
+        keccak256(limitData);
+        keccak256(overLimitData);
     }
 
     function getter() external pure returns(bytes4) {
