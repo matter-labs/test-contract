@@ -185,9 +185,9 @@ contract Main is ReentrancyGuard {
         // ecrecover with msg.hash == 0
 
         SignatureTestData memory data3 = SignatureTestData({
-            addr: 0x0865a77D4d68c7e3cdD219D431CfeE9271905074,
+            addr: 0xeDc01060fdD6592f54A63EAE6C89436675C4d70D,
             hash: 0x0,
-            signature: hex"c46cdc50a66f4d07c6e9a127a7277e882fb21bcfb5b068f2b58c7f7283993b790bdb5f0ac79d1a7efdc255f399a045038c1b433e9d06c1b1abd58a5fcaab33f11C"
+            signature: hex"9b37e91445e92b1423354825aa33d841d83cacfdd895d316ae88dabc317369962e385d648e3be194d45fbb1f7229ef10c5b7ee1c7c30145aa4ddf9380eab5a031C"
         });
 
         _ecrecoverOneTest(data3);
