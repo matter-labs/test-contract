@@ -24,11 +24,14 @@ export default {
         },
       },
     zkSyncDeploy: {
-        zkSyncNetwork: 'https://zksync2-testnet.zksync.dev',
-        ethNetwork: 'goerli'
+        zkSyncNetwork: "http://localhost:3050",
+        ethNetwork: "http://localhost:8545",
     },
     solidity: {
-        version: '0.8.20'
+        version: '0.8.24',
+        settings: {
+            evmVersion: 'cancun'
+        }
     },
     paths: {
         sources: './contracts'
@@ -36,6 +39,11 @@ export default {
     networks: {
         hardhat: {
             zksync: true
-        }
+        },
+        zkSyncTestNode: {
+            url: "http://127.0.0.1:8011",
+            ethNetwork: "localhost",
+            zksync: true,
+        },
     }
 };
