@@ -28,14 +28,11 @@ contract Main is ReentrancyGuard {
         address addr;
     }
 
-    struct P256VerifyTestData {
-        bytes32 hash;
-        bytes32 x;
-        bytes32 y;
-        bytes32 s;
-        bytes32 r;
-        bool success;
-    }
+    // struct P256VerifyTestData {
+    //     // hash, x, y, r, s
+    //     bytes32 input[5];
+    //     bool success;
+    // }
 
     using HeapLibrary for HeapLibrary.Heap;
 
@@ -105,7 +102,6 @@ contract Main is ReentrancyGuard {
 
         // Test transient storage.
         testTransientStore();
-
 
         // Test code oracle
         testCodeOracle();
@@ -233,20 +229,52 @@ contract Main is ReentrancyGuard {
     }
 
     function secp256VerifyTest() public view {
+        bytes32 GROUP_SIZE = bytes32(0xffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551);
+        uint256 P256_GROUP_ORDER = 0xffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551;
+
         bytes32 correctHash = 0xf6eebeabe0878b4ee116ec0ebdf389b56447e991c0573bf27634fd372f98a3c4;
         bytes32 correctX = 0x1ccbe91c075fc7f4f033bfa248db8fccd3565de94bbfb12f3c59ff46c271bf83;
         bytes32 correctY = 0xce4014c68811f9a21a1fdb2c0e6113e06db7ca93b7404e78dc7ccd5ca89a4ca9;
         bytes32 correctR = 0x7086a4f1ad84caa4b058746fcb521cb5618158d1cf9c4c5b79c6e60b61da409a;
         bytes32 correctS = 0xd2a2e4606a2fa5639c7f97e86d218c88525ba4e3114ba2ce87b0d3507514c265;
 
-        _secp256VerifyTest(P256VerifyTestData({
-            hash: correctHash,
-            x: correctX,
-            y: correctY,
-            r: correctR,
-            s: correctS,
-            success: true
-        }));
+        bytes32[] memory input = new bytes32[](5);
+        input[0] = correctHash;
+        input[1] = correctR;
+        input[2] = correctS;
+        input[3] = correctX;
+        input[4] = correctY;
+
+        _secp256VerifyTest(input, true);
+
+        // Testing providing 0 values
+        for(uint256 i = 0; i < 5; i++) {
+            bytes32 prev = input[i];
+            input[i] = 0;
+            _secp256VerifyTest(input, false);
+            input[i] = prev;
+        }
+
+        // Testing large r/s
+        for(uint256 i = 1; i <= 2; i++) {
+            bytes32 prev = input[i];
+            input[i] = GROUP_SIZE;
+            _secp256VerifyTest(input, false);
+            input[i] = prev;
+        }
+
+        // Testing incorrect x/y (i.e. not a valid point on the curve)
+        for(uint256 i = 3; i <= 4; i++) {
+            bytes32 prev = input[i];
+            input[i] = bytes32(uint256(0x01));
+            _secp256VerifyTest(input, false);
+            input[i] = prev;
+        }
+
+        // Check malleability
+        input[2] = bytes32(P256_GROUP_ORDER - uint256(correctS));
+
+        _secp256VerifyTest(input, true);
     }
 
     function _ecrecoverOneTest(EcrecoverSignatureTestData memory _data) internal pure {
@@ -266,8 +294,8 @@ contract Main is ReentrancyGuard {
 		require(_data.addr == ecrecover(_data.hash, v, r, s));
 	}
 
-    function _secp256VerifyTest(P256VerifyTestData memory _testData) internal view {
-        bytes memory data = abi.encodePacked(_testData.hash, _testData.r, _testData.s, _testData.x, _testData.y);
+    function _secp256VerifyTest(bytes32[] memory _input, bool _expectedSuccess) internal view {
+        bytes memory data = abi.encodePacked(_input);
 
         (bool success, bytes memory _result) = P256_VERIFY_ADDRESS.staticcall(data);
 
@@ -275,7 +303,7 @@ contract Main is ReentrancyGuard {
         // the `_result` is empty or not
         require(success, "P256 Verify has failed");
 
-        if (_testData.success) {
+        if (_expectedSuccess) {
             bool internalSuccess = abi.decode(_result, (bool));
             require(internalSuccess, "P256 Verify should have succeeded, but failed");
         } else {
@@ -361,7 +389,7 @@ contract Main is ReentrancyGuard {
     }
 
     function testCodeOracle() public {
-        // We assume that no other test before this one will access `ecAddAddress` & so it wont be decommitted
+        // We assume that no other test before this one will access `EC_ADD_ADDR` & so it was not decommitted
         // before.
         bytes32 bytecodeHash = Helper.getRawCodeHash(EC_ADD_ADDR);
 
