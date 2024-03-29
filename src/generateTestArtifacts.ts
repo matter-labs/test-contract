@@ -13,6 +13,7 @@ interface TestArtifact {
         [address: string]: number[][];
     };
     default_account_code: number[][];
+    evm_simulator_code: number[][];
     entry_point_address: string;
     entry_point_code: number[][];
 }
@@ -55,6 +56,8 @@ async function main() {
     const finalArtifact: TestArtifact = {
         predeployed_contracts: predeployedContracts,
         default_account_code: splitIntoWords(predeployedContractArtifacts.default_account_code),
+        // In the current version the EVM simulator code is the same as the default account's one
+        evm_simulator_code: splitIntoWords(predeployedContractArtifacts.default_account_code),
         entry_point_address: TEST_CONTRACT_ADDRESS,
         entry_point_code: splitIntoWords(testContractByrecode),
     };
