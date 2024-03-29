@@ -1,4 +1,5 @@
 import '@typechain/hardhat';
+import "@matterlabs/hardhat-zksync-node";
 import '@matterlabs/hardhat-zksync-solc';
 
 // This version of system contracts requires a pre release of the compiler
