@@ -224,13 +224,13 @@ contract Main is ReentrancyGuard {
 
         // Should recover correctly malleable signatures
 
-        // EcrecoverSignatureTestData memory data5 = EcrecoverSignatureTestData({
-        //     addr: address(0x7cad5049A2bcA031c6E4558c9029e3663Adc948E),
-        //     hash: bytes32(uint256(100477317730243874162981143148734960184526648924501832359736878627087072867386)),
-        //     signature: hex"aceaa17ffb7bfafe15e2c026801400564854c9839a1665b65f18b228dd55ebcdc5619cde9ca3df8b16a8b5731a6ab66e527ab0dc3caf319d46fd40f832fce34a1c"
-        // });
+        EcrecoverSignatureTestData memory data5 = EcrecoverSignatureTestData({
+            addr: address(0x7cad5049A2bcA031c6E4558c9029e3663Adc948E),
+            hash: bytes32(uint256(100477317730243874162981143148734960184526648924501832359736878627087072867386)),
+            signature: hex"aceaa17ffb7bfafe15e2c026801400564854c9839a1665b65f18b228dd55ebcdc5619cde9ca3df8b16a8b5731a6ab66e527ab0dc3caf319d46fd40f832fce34a1c"
+        });
 
-        // _ecrecoverOneTest(data5);
+        _ecrecoverOneTest(data5);
     }
 
     function secp256VerifyTest() public view {
