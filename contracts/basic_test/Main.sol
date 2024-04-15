@@ -102,7 +102,7 @@ contract Main is ReentrancyGuard {
         testCodeOracle();
 
         // Test code oracle reusing bytecode from code decommitment
-        testCodeOracleResuingBytecode();
+        testCodeOracleReusingBytecode();
 
         (bool s, ) = addressForBurning.call{value: msg.value}("");
         require(s, "failed transfer call");
@@ -438,7 +438,7 @@ contract Main is ReentrancyGuard {
     }
 
     // Here we test that the code oracle will work fine with reusing an already decommitted bytecode
-    function testCodeOracleResuingBytecode() public {
+    function testCodeOracleReusingBytecode() public {
         // This is just a dummy call, it should fail, but it also should require us to decommit EC_MUL
         // precompile's bytecode.
         EC_MUL_ADDR.staticcall{gas: 1000}(""); 
