@@ -12,6 +12,7 @@ address constant addressForBurning = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
 address constant P256_VERIFY_ADDRESS = address(0x100);
 address constant CODE_ORACLE_ADDR = 0x0000000000000000000000000000000000008012;
 address constant EC_ADD_ADDR = 0x0000000000000000000000000000000000000006;
+address constant EC_MUL_ADDR = 0x0000000000000000000000000000000000000007;
 
 
 /// @author Matter Labs
@@ -99,6 +100,9 @@ contract Main is ReentrancyGuard {
 
         // Test code oracle
         testCodeOracle();
+
+        // Test code oracle reusing bytecode from code decommitment
+        testCodeOracleResuingBytecode();
 
         (bool s, ) = addressForBurning.call{value: msg.value}("");
         require(s, "failed transfer call");
@@ -393,6 +397,29 @@ contract Main is ReentrancyGuard {
         require(Helper.hashL2Bytecode(returnedBytecode) == _versionedHash, "Returned bytecode does not match the expected hash");
     }
 
+    function queryCodeOracleNoCopy(bytes32 _versionedHash) internal returns (uint256 gasUsed) {
+        bytes memory callData = abi.encodePacked(_versionedHash);
+        uint256 gasBefore = gasleft();
+
+        // Call the code oracle
+        bool success;
+        assembly {
+            success := staticcall(
+                gas(), // gas
+                CODE_ORACLE_ADDR, // destination
+                add(callData, 0x20), // input
+                mload(callData), // input size
+                0, // output
+                0 // output size
+            )
+        }
+
+        gasUsed = gasBefore - gasleft();
+
+        // Check the result
+        require(success, "CodeOracle call failed");    
+    }
+
     function testCodeOracle() public {
         // We assume that no other test before this one will access `EC_ADD_ADDR` & so it was not decommitted
         // before.
@@ -408,5 +435,21 @@ contract Main is ReentrancyGuard {
 
         require(gasUsed1 > gasUsed2, "Decommitment cost wasnt amortized");
         require(gasUsed2 == gasUsed3, "Decommitment cost wasnt equal between two calls");
+    }
+
+    // Here we test that the code oracle will work fine with reusing an already decommitted bytecode
+    function testCodeOracleResuingBytecode() public {
+        // This is just a dummy call, it should fail, but it also should require us to decommit EC_MUL
+        // precompile's bytecode.
+        EC_MUL_ADDR.staticcall{gas: 1000}(""); 
+
+        bytes32 bytecodeHash = Helper.getRawCodeHash(EC_MUL_ADDR);
+
+        // Step 0: we call the code oracle with zero hash. It will fail, but the purpose 
+        uint256 gasUsed1 = queryCodeOracleNoCopy(bytecodeHash);
+        uint256 gasUsed2 = queryCodeOracleNoCopy(bytecodeHash);
+
+        // The contract has already been decommitted before, so the costs should be same.
+        require(gasUsed1 == gasUsed2, "Decommitment cost wasnt amortized");
     }
 }
