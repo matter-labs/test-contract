@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-pragma solidity 0.8.24;
+pragma solidity 0.8.25;
 
 import "./Helper.sol";
 import "./ReentrancyGuard.sol";
@@ -11,8 +11,10 @@ address constant addressForBurning = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
 
 address constant P256_VERIFY_ADDRESS = address(0x100);
 address constant CODE_ORACLE_ADDR = 0x0000000000000000000000000000000000008012;
+address constant MODEXP_ADDR = 0x0000000000000000000000000000000000000005;
 address constant EC_ADD_ADDR = 0x0000000000000000000000000000000000000006;
 address constant EC_MUL_ADDR = 0x0000000000000000000000000000000000000007;
+address constant EC_PAIRING_ADDR = 0x0000000000000000000000000000000000000008;
 
 
 /// @author Matter Labs
@@ -27,6 +29,37 @@ contract Main is ReentrancyGuard {
         bytes32 hash;
         bytes signature;
         address addr;
+    }
+
+    // Here we set base, exp and mod to 32 bytes, 
+    // since we support only up to 32 bytes for them in circuits.
+    struct ModexpTestCase {
+        bytes32 base;       
+        bytes32 exp;    
+        bytes32 mod;
+        bytes32 expect;       // Expected result (base ^ exp) % mod 
+        bool expectedSuccess; // Whether the test case should succeed
+    }
+    
+    struct ECAddTestCase {
+        bytes32[2] p1;        // Point 1 (x, y)
+        bytes32[2] p2;        // Point 2 (x, y)
+        bytes32[2] expect;    // Expected result (x, y)
+        bool expectedSuccess; // Whether the test case should succeed
+    }
+
+    struct ECMulTestCase {
+        bytes32[2] p;         // Point (x, y)
+        bytes32 s;            // Scalar
+        bytes32[2] expect;    // Expected result (x, y)
+        bool expectedSuccess; // Whether the test case should succeed
+    }
+
+    struct ECPairingTestCase {
+        bytes32[2][] p1;      // G1 points (x, y)
+        bytes32[4][] p2;      // G2 points (x, y) - twisted
+        bool expect;          // Expected result
+        bool expectedSuccess; // Whether the test case should succeed
     }
 
     using HeapLibrary for HeapLibrary.Heap;
@@ -90,10 +123,13 @@ contract Main is ReentrancyGuard {
         // Test a couple of ecrecover calls.
         ecrecoverTest();
 
-
         // Test a couple of secp256Verify calls.
         secp256VerifyTest();
 
+        modexpTests();
+        ecAddTests();
+        ecMulTests();
+        ecPairingTests();
 
         // Test transient storage.
         testTransientStore();
@@ -286,6 +322,112 @@ contract Main is ReentrancyGuard {
         _secp256VerifyTest(input, true);
     }
 
+    function modexpTests() public view {
+        ModexpTestCase [] memory testCases = new ModexpTestCase[](1);
+
+        // Test case 1: Valid input points and expected result
+        testCases[0] = ModexpTestCase({
+            base: bytes32(0x8f3b7d5c187f8abbe0581dab5a37644febd35ea6d4fe3213288f9d63ab82a6b1),
+            exp: bytes32(0xafa9888e351dfdefd862945b0da33c9ea1de907ae830292438df1fa184447777), 
+            mod: bytes32(0xc7e38934b1501e64e5c0bd0ab35b3354520b6e88b81a1f063c37007c65b7efd5),
+            expect: bytes32(0x45682b037d21d235bd0ed6103ce2674e5c8e983a88bfd09c847a6324e77c1ad6),
+            expectedSuccess: true
+        });
+
+        for (uint256 i = 0; i < testCases.length; i++) {
+            _runModexpTestCase(testCases[i]);
+        }
+    }
+
+    function ecAddTests() public view {
+        ECAddTestCase[] memory testCases = new ECAddTestCase[](1);
+
+        // Test case 1: Valid input points and expected result
+        testCases[0] = ECAddTestCase({
+            p1: [
+                bytes32(0x099C07C9DD1107B9C9B0836DA7ECFB7202D10BEA1B8D1E88BC51CA476F23D91D), // x1
+                bytes32(0x28351E12F9219537FC8D6CAC7C6444BD7980390D0D3E203FE0D8C1B0D8119950)  // y1
+            ],
+            p2: [
+                bytes32(0x21E177A985C3DB8EF1D670629972C007AE90C78FB16E3011DE1D08F5A44CB655), // x2
+                bytes32(0x0BD68A7CAA07F6ADBECBF06FB1F09D32B7BED1369A2A58058D1521BEBD8272AC)  // y2
+            ],
+            expect: [
+                bytes32(0x25BEBA7AB903D641D77E5801CA4D69A7A581359959C5D2621301DDDAFB145044), // result_x
+                bytes32(0x19EE7A5CE8338BBCF4F74C3D3EC79D3635E837CB723EE6A0FA99269E3C6D7E23)  // result_y
+            ],
+            expectedSuccess: true
+        });
+
+        for (uint256 i = 0; i < testCases.length; i++) {
+            _runEcAddTestCase(testCases[i]);
+        }
+    }
+
+    function ecMulTests() public view {
+        ECMulTestCase[] memory testCases = new ECMulTestCase[](1);
+
+        // Test case 1: Valid input points and expected result
+        testCases[0] = ECMulTestCase({
+            p: [
+                bytes32(0x1F2A9FD8AB833C4F85ED209B187229ED51C510329CDA700BD1BB6E3483290C4C), // x
+                bytes32(0x0F518AE296ED6CF2C9E1449B4AEC256054C8AF11FD339E89377E4037575A156E)  // y
+            ],
+            s: bytes32(0x1E2DAB676985FDC3E228CFBCE8AB56BC92F95D354644FAAA56DFC895661AFCAE), // scalar
+            expect: [
+                bytes32(0x18FB38035EF9A864E189211019D1319170D90F16DA429D564EF71B1F72A45033), // result_x
+                bytes32(0x29A541100C87B605110364DB832E9929693132F6E65B9FE1C72EC05075A89D35)  // result_y
+            ],
+            expectedSuccess: true
+        });
+
+        for (uint256 i = 0; i < testCases.length; i++) {
+            _runEcMulTestCase(testCases[i]);
+        }
+    }
+
+    function ecPairingTests() public view {
+        ECPairingTestCase[] memory testCases = new ECPairingTestCase[](1);
+
+        // Test case 1: Valid input points and expected result
+        testCases[0] = ECPairingTestCase({
+            p1: new bytes32[2][](2) , // G1 points (two pairs of x and y)
+            p2: new bytes32[4][](2) , // G2 points (two sets of four twisted coords)
+            expect: true,            // Expected result from test case
+            expectedSuccess: true    // Whether the call should succeed
+        });
+
+        // Fill in the p1 G1 points (x, y)
+        testCases[0].p1[0] = [
+            bytes32(0x2cf44499d5d27bb186308b7af7af02ac5bc9eeb6a3d147c186b21fb1b76e18da),
+            bytes32(0x2c0f001f52110ccfe69108924926e45f0b0c868df0e7bde1fe16d3242dc715f6)
+        ];
+
+        testCases[0].p1[1] = [
+            bytes32(0x0000000000000000000000000000000000000000000000000000000000000001),
+            bytes32(0x30644e72e131a029b85045b68181585d97816a916871ca8d3c208c16d87cfd45)
+        ];
+
+        // Fill in the p2 G2 points (twisted coordinates)
+        testCases[0].p2[0] = [
+            bytes32(0x1fb19bb476f6b9e44e2a32234da8212f61cd63919354bc06aef31e3cfaff3ebc),
+            bytes32(0x22606845ff186793914e03e21df544c34ffe2f2f3504de8a79d9159eca2d98d9),
+            bytes32(0x2bd368e28381e8eccb5fa81fc26cf3f048eea9abfdd85d7ed3ab3698d63e4f90),
+            bytes32(0x2fe02e47887507adf0ff1743cbac6ba291e66f59be6bd763950bb16041a0a85e)
+        ];
+
+        testCases[0].p2[1] = [
+            bytes32(0x1971ff0471b09fa93caaf13cbf443c1aede09cc4328f5a62aad45f40ec133eb4),
+            bytes32(0x091058a3141822985733cbdddfed0fd8d6c104e9e9eff40bf5abfef9ab163bc7),
+            bytes32(0x2a23af9a5ce2ba2796c1f4e453a370eb0af8c212d9dc9acd8fc02c2e907baea2),
+            bytes32(0x23a8eb0b0996252cb548a4487da97b02422ebc0e834613f954de6c7e0afdc1fc)
+        ];
+
+        for (uint256 i = 0; i < testCases.length; i++) {
+            _runEcPairingTestCase(testCases[i]);
+        }
+    }
+
     function _ecrecoverOneTest(EcrecoverSignatureTestData memory _data) internal pure {
         bytes memory signature = _data.signature;
 		require(signature.length == 65);
@@ -320,6 +462,71 @@ contract Main is ReentrancyGuard {
         }
     }
 
+    function _runModexpTestCase(ModexpTestCase memory testCase) internal view {
+        bytes32 length = bytes32(uint256(0x20));
+
+        bytes memory input = abi.encodePacked(
+            length, length, length, 
+            testCase.base, testCase.exp, testCase.mod
+        );
+
+        (bool success, bytes memory result) = MODEXP_ADDR.staticcall(input);
+        
+        require(success == testCase.expectedSuccess, "MODEXP precompile call success status mismatch");
+
+        if (success) {
+            (bytes32 actual) = abi.decode(result, (bytes32));
+            require(actual == testCase.expect, "MODEXP result mismatch");
+        }
+    }
+
+    function _runEcAddTestCase(ECAddTestCase memory testCase) internal view {
+        bytes memory input = abi.encodePacked(testCase.p1[0], testCase.p1[1], testCase.p2[0], testCase.p2[1]);
+
+        (bool success, bytes memory result) = EC_ADD_ADDR.staticcall(input);
+        
+        require(success == testCase.expectedSuccess, "ECADD precompile call success status mismatch");
+
+        if (success) {
+            (bytes32 actualX, bytes32 actualY) = abi.decode(result, (bytes32, bytes32));
+            require(actualX == testCase.expect[0] && actualY == testCase.expect[1], "ECADD result mismatch");
+        }
+    }
+
+    function _runEcMulTestCase(ECMulTestCase memory testCase) internal view {
+        bytes memory input = abi.encodePacked(testCase.p[0], testCase.p[1], testCase.s);
+
+        (bool success, bytes memory result) = EC_MUL_ADDR.staticcall(input);
+        
+        require(success == testCase.expectedSuccess, "ECMUL precompile call success status mismatch");
+
+        if (success) {
+            (bytes32 actualX, bytes32 actualY) = abi.decode(result, (bytes32, bytes32));
+            require(actualX == testCase.expect[0] && actualY == testCase.expect[1], "ECMUL result mismatch");
+        }
+    }
+
+    function _runEcPairingTestCase(ECPairingTestCase memory testCase) internal view {
+        bytes memory input;
+        require(testCase.p1.length == testCase.p2.length, "G1 and G2 amounts must match");
+
+        for (uint256 i = 0; i < testCase.p1.length; i++) {
+            input = abi.encodePacked(input, 
+                testCase.p1[i][0], testCase.p1[i][1],
+                testCase.p2[i][0], testCase.p2[i][1], testCase.p2[i][2], testCase.p2[i][3]
+            );
+        }
+
+        (bool success, bytes memory result) = EC_PAIRING_ADDR.staticcall(input);
+        
+        require(success == testCase.expectedSuccess, "ECPAIRING precompile call success status mismatch");
+
+        if (success) {
+            bool actual = abi.decode(result, (bool));
+            require(actual == testCase.expect, "ECPAIRING result mismatch");
+        }
+    }
+
     // This test aims to check that the tstore/sstore are writing into separate spaces.
     function testTrasientAndNonTransientStore() external {
         storageValueKey0 = 100;
@@ -338,7 +545,6 @@ contract Main is ReentrancyGuard {
         require(storedVal == 100, "Stored value should be 100");
         require(tStoredVal == 1, "Transient stored value should be 1");
     }
-
 
     uint256 constant TSTORE_TEST_KEY = 0xff;
 
