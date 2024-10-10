@@ -475,7 +475,7 @@ contract Main is ReentrancyGuard {
         require(success == testCase.expectedSuccess, "MODEXP precompile call success status mismatch");
 
         if (success) {
-            (bytes32 actual) = abi.decode(result, (bytes32));
+            bytes32 actual = abi.decode(result, (bytes32));
             require(actual == testCase.expect, "MODEXP result mismatch");
         }
     }
