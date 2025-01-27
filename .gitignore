@@ -8,3 +8,7 @@ build
 yarn-debug.log*
 yarn-error.log*
 .yarn/
+
+out/
+zkout/
+broadcast/
