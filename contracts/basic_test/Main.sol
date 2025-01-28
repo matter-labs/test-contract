@@ -105,8 +105,14 @@ contract Main is ReentrancyGuard {
         //address codeAddress = Helper.getCodeAddress();
         //require(codeAddress == address(this), "in delegate call");
 
-        // Make common checks before processing the function
-        commonChecks();
+        modexpTests();
+        ecAddTests();
+        ecMulTests();
+        ecPairingTests();
+        return
+            // Make common checks before processing the function
+            commonChecks();
+        return;
 
         // Test storage read/write, and hashes
         heapTest();
@@ -139,7 +145,7 @@ contract Main is ReentrancyGuard {
         secp256VerifyTest();
 
         // Doesn't work in forge script - due to lack of precompile.
-        // modexpTests();
+        modexpTests();
         ecAddTests();
         ecMulTests();
         ecPairingTests();

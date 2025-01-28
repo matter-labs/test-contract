@@ -74,13 +74,13 @@ async function main() {
 
     for (const [address, contractName] of Object.entries(addressToStringMap)) {
         const bytecode = await getBytecodeForSystemContract(contractName);
-        const paddedAddress = ethers.utils.hexZeroPad(ethers.utils.hexlify(parseInt(address)), 32);
+        const paddedAddress = ethers.utils.hexZeroPad(ethers.utils.hexlify(parseInt(address)), 20);
         predeployedContracts[paddedAddress] = bytecode;
     }
 
     for (const [address, contractName] of Object.entries(precompiles)) {
         const bytecode = await getBytecodeForPrecompile(contractName);
-        const paddedAddress = ethers.utils.hexZeroPad(ethers.utils.hexlify(parseInt(address)), 32);
+        const paddedAddress = ethers.utils.hexZeroPad(ethers.utils.hexlify(parseInt(address)), 20);
         predeployedContracts[paddedAddress] = bytecode;
     }
 
