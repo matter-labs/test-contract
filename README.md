@@ -4,13 +4,18 @@ This repo generates the test artifacts for the [basic test](https://github.com/m
 
 To generate the test data do the following:
 
-1. Generate `predeployed_contracts_artifacts.json` file in the `era-contracts` repository
+1. Checkout era-contracts, and make sure to compile system-contracts
 
 ```
-yarn sc generate-test-harness-artifacts
+cd ../era-contracts && yarn sc build
 ```
 
-2. Replace the `predeployed_contracts_artifacts.json` file in the root of this repo with the file generated in `system-contracts/predeployed_contracts_artifacts.json`
+2. Generate `predeployed_contracts_artifacts.json` file 
+
+```
+ SYSTEM_CONTRACTS_DIR=../anvil-zksync/contracts/system-contracts   yarn collect-system-contract
+```
+
 
 3. Run 
 

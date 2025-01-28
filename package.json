@@ -30,6 +30,7 @@
     "typescript": "^5.4.3"
   },
   "scripts": {
+    "collect-system-contracts": "ts-node src/collectSystemContracts.ts",
     "build": "hardhat compile && ts-node src/generateTestArtifacts.ts",
     "test": "hardhat test --network zkSyncTestNode",
     "test-node": "hardhat node-zksync --tag v0.0.1-vm1.5.0"
