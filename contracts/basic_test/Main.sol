@@ -105,14 +105,8 @@ contract Main is ReentrancyGuard {
         //address codeAddress = Helper.getCodeAddress();
         //require(codeAddress == address(this), "in delegate call");
 
-        modexpTests();
-        ecAddTests();
-        ecMulTests();
-        ecPairingTests();
-        return
-            // Make common checks before processing the function
-            commonChecks();
-        return;
+        // Make common checks before processing the function
+        commonChecks();
 
         // Test storage read/write, and hashes
         heapTest();
@@ -153,13 +147,11 @@ contract Main is ReentrancyGuard {
         // Test transient storage.
         testTransientStore();
 
-        // TODO: Doesn't work in forge script.
         // Test code oracle
-        // testCodeOracle();
+        testCodeOracle();
 
-        // TODO: Doesn't work in forge script.
         // Test code oracle reusing bytecode from code decommitment
-        //testCodeOracleReusingBytecode();
+        testCodeOracleReusingBytecode();
 
         (bool s, ) = addressForBurning.call{value: msg.value}("");
         require(s, "failed transfer call");
@@ -195,7 +187,6 @@ contract Main is ReentrancyGuard {
             bytes32 weirdHash = keccak256(data) ^ sha256(data);
             data = bytes.concat(data, weirdHash);
             heap.push(uint256(weirdHash));
-
             Helper.sendMessageToL1(data);
         }
 

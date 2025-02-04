@@ -40,6 +40,21 @@ async function getBytecodeForPrecompile(precompile: string): Promise<string> {
     return deployedBytecode;
 }
 
+async function getBytecodeForYul(contract: string): Promise<string> {
+    const systemContractsDir = process.env.SYSTEM_CONTRACTS_DIR;
+
+    if (!systemContractsDir) {
+        throw new Error('SYSTEM_CONTRACTS_DIR environment variable is not set');
+    }
+
+    const filePath = `${systemContractsDir}/contracts-preprocessed/artifacts/${contract}.yul.zbin`;
+
+    const bytecodeBuffer = await fs.promises.readFile(filePath);
+    const deployedBytecode = '0x' + bytecodeBuffer.toString('hex');
+    return deployedBytecode;
+}
+
+
 async function main() {
     console.log(`collecting system contracts`);
 
@@ -67,7 +82,14 @@ async function main() {
         '0x8': 'EcPairing',
         '0x100': 'P256Verify',
         '0x8010': 'Keccak256',
+        '0x8012': 'CodeOracle'
     };
+
+    const yulContracts: { [address: string]: string } = {
+        '0x800d': 'EventWriter',
+    }
+
+
 
 
     const predeployedContracts: { [address: string]: string } = {};
@@ -80,6 +102,12 @@ async function main() {
 
     for (const [address, contractName] of Object.entries(precompiles)) {
         const bytecode = await getBytecodeForPrecompile(contractName);
+        const paddedAddress = ethers.utils.hexZeroPad(ethers.utils.hexlify(parseInt(address)), 20);
+        predeployedContracts[paddedAddress] = bytecode;
+    }
+
+    for (const [address, contractName] of Object.entries(yulContracts)) {
+        const bytecode = await getBytecodeForYul(contractName);
         const paddedAddress = ethers.utils.hexZeroPad(ethers.utils.hexlify(parseInt(address)), 20);
         predeployedContracts[paddedAddress] = bytecode;
     }
