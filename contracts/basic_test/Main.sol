@@ -436,7 +436,7 @@ contract Main is ReentrancyGuard {
     }
 
     function ecPairingTests() public view {
-        ECPairingTestCase[] memory testCases = new ECPairingTestCase[](1);
+        ECPairingTestCase[] memory testCases = new ECPairingTestCase[](3);
 
         // Test case 1: Valid input points and expected result
         testCases[0] = ECPairingTestCase({
@@ -495,6 +495,39 @@ contract Main is ReentrancyGuard {
                 0x23a8eb0b0996252cb548a4487da97b02422ebc0e834613f954de6c7e0afdc1fc
             )
         ];
+
+        // Test case 2: Valid points, but should not pair.
+        testCases[1] = ECPairingTestCase({
+            p1: new bytes32[2][](2), // G1 points (two pairs of x and y)
+            p2: new bytes32[4][](2), // G2 points (two sets of four twisted coords)
+            expect: false, // Expected result from test case
+            expectedSuccess: true // Whether the call should succeed
+        });
+
+        testCases[1].p1[0] = testCases[0].p1[0];
+        // We are using a 'wrong' point here, for pairing to return false.
+        testCases[1].p1[1] = testCases[0].p1[0];
+        testCases[1].p2 = testCases[0].p2;
+
+        // Test case 3: Invalid points.
+        testCases[2] = ECPairingTestCase({
+            p1: new bytes32[2][](2), // G1 points (two pairs of x and y)
+            p2: new bytes32[4][](2), // G2 points (two sets of four twisted coords)
+            expect: false, // Expected result from test case
+            expectedSuccess: false // Whether the call should succeed
+        });
+
+        testCases[2].p1[0] = testCases[0].p1[0];
+        testCases[2].p1[1] = [
+            bytes32(
+                0x0000000000000000000000000000000000000000000000000000000000000001
+            ),
+            // Invalid point.
+            bytes32(
+                0x0000000000000000000000000000000000000000000000000000000000000111
+            )
+        ];
+        testCases[2].p2 = testCases[0].p2;
 
         for (uint256 i = 0; i < testCases.length; i++) {
             _runEcPairingTestCase(testCases[i]);
