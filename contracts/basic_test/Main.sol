@@ -101,9 +101,8 @@ contract Main is ReentrancyGuard {
     }
 
     receive() external payable nonReentrant {
-        // TODO: doesn't work in forge script.
-        //address codeAddress = Helper.getCodeAddress();
-        //require(codeAddress == address(this), "in delegate call");
+        address codeAddress = Helper.getCodeAddress();
+        require(codeAddress == address(this), "in delegate call");
 
         // Make common checks before processing the function
         commonChecks();
