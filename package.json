@@ -3,23 +3,36 @@
   "version": "0.1.0",
   "license": "MIT",
   "dependencies": {
-    "@matterlabs/hardhat-zksync-solc": "^0.3.12",
+    "@matterlabs/hardhat-zksync-deploy": "^0.7.0",
+    "@matterlabs/hardhat-zksync-solc": "^1.1.4",
+    "@matterlabs/hardhat-zksync-verify": "^1.4.3",
     "@typechain/hardhat": "^6.0.0",
-    "ethers": "^5.6.6",
-    "hardhat": "^2.9.5",
-    "openzeppelin-contracts": "^4.0.0"
+    "ethers": "5.7.2",
+    "hardhat": "=2.22.2",
+    "openzeppelin-contracts": "^4.0.0",
+    "zksync-ethers": "https://github.com/kelemeno/zksync-ethers#ethers-v5-feat/bridgehub"
   },
   "devDependencies": {
-    "@nomiclabs/hardhat-ethers": "^2.0.6",
+    "@matterlabs/hardhat-zksync-chai-matchers": "^1.3.0",
+    "@matterlabs/hardhat-zksync-node": "^1.0.3",
+    "@nomicfoundation/hardhat-chai-matchers": "^1.0.3",
+    "@nomiclabs/hardhat-ethers": "^2.2.3",
     "@typechain/ethers-v5": "^10.0.0",
+    "@types/chai": "^4.3.14",
+    "@types/mocha": "^10.0.6",
     "@types/node": "^10.0.34",
+    "chai": "^5.1.0",
     "fs": "^0.0.1-security",
+    "mocha": "^10.4.0",
     "ts-generator": "^0.1.1",
-    "ts-node": "^10.7.0",
+    "ts-node": "^10.9.2",
     "typechain": "^8.0.0",
-    "typescript": "^4.3.5"
+    "typescript": "^5.4.3"
   },
   "scripts": {
-    "build": "hardhat compile && ts-node src/generateTestArtifacts.ts"
+    "collect-system-contracts": "ts-node src/collectSystemContracts.ts",
+    "build": "hardhat compile && ts-node src/generateTestArtifacts.ts",
+    "test": "hardhat test --network zkSyncTestNode",
+    "test-node": "hardhat node-zksync --tag v0.0.1-vm1.5.0"
   }
 }
