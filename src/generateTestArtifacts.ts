@@ -3,7 +3,7 @@ import * as fs from 'fs';
 
 interface PredeployedContractsArtifacts {
     predeployed_contracts: {
-      [address: string]: string;
+        [address: string]: string;
     };
     default_account_code: string;
 }
@@ -13,7 +13,7 @@ interface TestArtifact {
         [address: string]: number[][];
     };
     default_account_code: number[][];
-    evm_simulator_code: number[][];
+    evm_emulator_code: number[][];
     entry_point_address: string;
     entry_point_code: number[][];
 }
@@ -27,7 +27,7 @@ const TEST_CONTRACT_ADDRESS = '0xc54E30ABB6a3eeD1b9DC0494D90c9C22D76FbA7e';
 function splitIntoWords(bytecode: string): number[][] {
     const unpaddedBytecode = bytecode.substring(2);
 
-    if(unpaddedBytecode.length % 64 !== 0) {
+    if (unpaddedBytecode.length % 64 !== 0) {
         throw new Error('Bytecode length is not a multiple of 64');
     }
 
@@ -48,7 +48,7 @@ async function main() {
     const testContractByrecode = JSON.parse(await fs.promises.readFile('./artifacts-zk/contracts/basic_test/Main.sol/Main.json', { encoding: 'utf-8' }) as string).bytecode as string;
 
     const predeployedContracts = {};
-    for(const [address, bytecode] of Object.entries(predeployedContractArtifacts.predeployed_contracts)) {
+    for (const [address, bytecode] of Object.entries(predeployedContractArtifacts.predeployed_contracts)) {
         // @ts-ignore
         predeployedContracts[address] = splitIntoWords(bytecode);
     }
@@ -57,7 +57,7 @@ async function main() {
         predeployed_contracts: predeployedContracts,
         default_account_code: splitIntoWords(predeployedContractArtifacts.default_account_code),
         // In the current version the EVM simulator code is the same as the default account's one
-        evm_simulator_code: splitIntoWords(predeployedContractArtifacts.default_account_code),
+        evm_emulator_code: splitIntoWords(predeployedContractArtifacts.default_account_code),
         entry_point_address: TEST_CONTRACT_ADDRESS,
         entry_point_code: splitIntoWords(testContractByrecode),
     };
